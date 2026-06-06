@@ -85,18 +85,6 @@
 	@call cd ..
 )
 
-@if not exist voxy-client-app-model (
-	@echo Cloning git repo for project voxy-client-app-model
-    @call git clone --branch 1.0-SNAPSHOT --single-branch https://github.com/Pierre-Emmanuel41/voxy-client-app-model.git
-) else (
-	@call cd voxy-client-app-model
-
-	@echo Pulling latest changes for project voxy-client-app-model
-	@call git pull
-
-	@call cd ..
-)
-
 @if not exist command-tree (
 	@echo Cloning git repo for project command-tree
     @call git clone --branch 2.1-SNAPSHOT --single-branch https://github.com/Pierre-Emmanuel41/command-tree.git
@@ -142,11 +130,6 @@
 
 @echo Building project sound
 @call cd sound
-@call mvn clean package install
-@call cd ..
-
-@echo Building project voxy-client-app-model
-@call cd voxy-client-app-model
 @call mvn clean package install
 @call cd ..
 

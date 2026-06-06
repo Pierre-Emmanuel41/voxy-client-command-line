@@ -17,7 +17,7 @@
   <dependencies>
     <dependency>
       <groupId>fr.pederobien</groupId>
-      <artifactId>voxy-client-app-model</artifactId>
+      <artifactId>voxy-client</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>

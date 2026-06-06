@@ -10,7 +10,10 @@ import fr.pederobien.commandtree.interfaces.INode;
 import fr.pederobien.commandtree.interfaces.INodeBuilder;
 import fr.pederobien.commandtree.interfaces.IResult;
 import fr.pederobien.commandtree.interfaces.ITree;
-import fr.pederobien.voxy.client.app.model.VoxyClientAppModel;
+import fr.pederobien.communication.impl.layer.AesSafeLayerInitializer;
+import fr.pederobien.communication.impl.layer.SimpleCertificate;
+import fr.pederobien.voxy.client.impl.VoxyClientFactory;
+import fr.pederobien.voxy.client.impl.config.VoxyClientConfig;
 import fr.pederobien.voxy.client.interfaces.IVoxyClient;
 import fr.pederobien.voxy.client.interfaces.IVoxyPlayer;
 import fr.pederobien.voxy.client.interfaces.IVoxyRoom;
@@ -151,7 +154,11 @@ public class VoxyCommandTree {
 
 		int port = NodeHelper.parseInt(args[2]);
 
-		tree.setSeed(new VoxyClientAppModel(name, address, port));
+		VoxyClientConfig config = VoxyClientFactory.createConfig(name, address, port);
+		config.getTcpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate()));
+		config.getUdpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate()));
+
+		tree.setSeed(VoxyClientFactory.createClient(config));
 		return NodeHelper.result(true, "Client associated to player \"%s\" and server %s:%s created", name, address, port);
 	}
 
