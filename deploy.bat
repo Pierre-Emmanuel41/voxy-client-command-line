@@ -61,18 +61,6 @@
 	@call cd ..
 )
 
-@if not exist voxy-client (
-	@echo Cloning git repo for project sound
-    @call git clone --branch 1.0-SNAPSHOT --single-branch https://github.com/Pierre-Emmanuel41/voxy-client.git
-) else (
-	@call cd voxy-client
-
-	@echo Pulling latest changes for project voxy-client
-	@call git pull
-
-	@call cd ..
-)
-
 @if not exist sound (
 	@echo Cloning git repo for project sound
     @call git clone --branch 2.0-SNAPSHOT --single-branch https://github.com/Pierre-Emmanuel41/sound.git
@@ -80,6 +68,18 @@
 	@call cd sound
 
 	@echo Pulling latest changes for project sound
+	@call git pull
+
+	@call cd ..
+)
+
+@if not exist voxy-client (
+	@echo Cloning git repo for project sound
+    @call git clone --branch 1.0-SNAPSHOT --single-branch https://github.com/Pierre-Emmanuel41/voxy-client.git
+) else (
+	@call cd voxy-client
+
+	@echo Pulling latest changes for project voxy-client
 	@call git pull
 
 	@call cd ..
@@ -123,13 +123,13 @@
 @call mvn clean package install
 @call cd ..
 
-@echo Building project voxy-client
-@call cd voxy-client
+@echo Building project sound
+@call cd sound
 @call mvn clean package install
 @call cd ..
 
-@echo Building project sound
-@call cd sound
+@echo Building project voxy-client
+@call cd voxy-client
 @call mvn clean package install
 @call cd ..
 
