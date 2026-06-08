@@ -7,7 +7,6 @@ public class VoxyClientCLIApp {
 
 	public static void main(String[] args) {
 		Logger.setPrintInColor(true);
-		Logger.setPrintEvent(true);
 
 		if (args.length == 0)
 			// Max debug level is 3 in project voxy-client
