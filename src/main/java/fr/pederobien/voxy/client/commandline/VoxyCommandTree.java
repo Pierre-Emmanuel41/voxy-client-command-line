@@ -23,6 +23,7 @@ public class VoxyCommandTree {
 	private static final String CREATE = "create";
 	private static final String CONNECT = "connect";
 	private static final String DISCONNECT = "disconnect";
+	private static final String DISPOSE = "dispose";
 	private static final String JOIN = "join";
 	private static final String LEAVE = "leave";
 	private static final String SET = "set";
@@ -58,6 +59,12 @@ public class VoxyCommandTree {
 		builder.withExecution((tree, args) -> disconnect(tree, args));
 		tree.add(builder.build());
 
+		// Dispose ------------------------------------------------------------
+		builder = tree.getNodeBuilder(DISPOSE, "To dispose this client,");
+		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withExecution((tree, args) -> dispose(tree, args));
+		tree.add(builder.build());
+
 		// Join ---------------------------------------------------------------
 		builder = tree.getNodeBuilder(JOIN, "To join a room on the server");
 		builder.withAvailability(client -> client != null && !client.isDisposed());
@@ -78,13 +85,13 @@ public class VoxyCommandTree {
 
 		// Set Mute -----------------------------------------------------------
 		builder = tree.getNodeBuilder(MUTE, "To mute/unmute yourself or a player for yourself");
-		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withAvailability(client -> client != null);
 		builder.withExecution((tree, args) -> setMute(tree, args));
 		set.add(builder.build());
 
 		// Set Deaf -----------------------------------------------------------
 		builder = tree.getNodeBuilder(DEAF, "To deaf/undeaf yourself");
-		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withAvailability(client -> client != null);
 		builder.withExecution((tree, args) -> setDeaf(tree, args));
 		set.add(builder.build());
 
@@ -96,13 +103,13 @@ public class VoxyCommandTree {
 
 		// Add Room -----------------------------------------------------------
 		builder = tree.getNodeBuilder(ROOM, "To add a room on the server");
-		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withAvailability(client -> client != null);
 		builder.withExecution((tree, args) -> addRoom(tree, args));
 		add.add(builder.build());
 
 		// Remove -------------------------------------------------------------
 		builder = tree.getNodeBuilder(REMOVE, "To send a remove request to the server");
-		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withAvailability(client -> client != null);
 		INode<IVoxyClient> remove = builder.build();
 		tree.add(remove);
 
@@ -120,13 +127,13 @@ public class VoxyCommandTree {
 
 		// Rename Room --------------------------------------------------------
 		builder = tree.getNodeBuilder(ROOM, "To rename a room on the server");
-		builder.withAvailability(client -> client != null && !client.isDisposed());
+		builder.withAvailability(client -> client != null);
 		builder.withExecution((tree, args) -> renameRoom(tree, args));
 		rename.add(builder.build());
 
 		// List ---------------------------------------------------------------
 		builder = tree.getNodeBuilder(LIST, "To list each room registered on the server");
-		builder.withAvailability(client -> client != null);
+		builder.withAvailability(client -> client != null && !client.isDisposed());
 		builder.withExecution((tree, args) -> list(tree, args));
 		tree.add(builder.build());
 	}
@@ -177,6 +184,11 @@ public class VoxyCommandTree {
 	private IResult disconnect(ITree<IVoxyClient> tree, String[] args) {
 		tree.getSeed().disconnect();
 		return NodeHelper.result(true, "Attempting disconnection from the server");
+	}
+
+	private IResult dispose(ITree<IVoxyClient> tree, String[] args) {
+		tree.getSeed().dispose();
+		return NodeHelper.result(true, "Disposing %s's client", tree.getSeed().getPlayer().getName());
 	}
 
 	private IResult join(ITree<IVoxyClient> tree, String[] args) {
