@@ -12,6 +12,7 @@ import fr.pederobien.commandtree.interfaces.IResult;
 import fr.pederobien.commandtree.interfaces.ITree;
 import fr.pederobien.communication.impl.layer.AesSafeLayerInitializer;
 import fr.pederobien.communication.impl.layer.SimpleCertificate;
+import fr.pederobien.sound.impl.filters.SimpleBandPassFilter;
 import fr.pederobien.voxy.client.impl.VoxyClientFactory;
 import fr.pederobien.voxy.client.impl.config.VoxyClientConfig;
 import fr.pederobien.voxy.client.interfaces.IVoxyClient;
@@ -155,8 +156,14 @@ public class VoxyCommandTree {
 		int port = NodeHelper.parseInt(args[2]);
 
 		VoxyClientConfig config = VoxyClientFactory.createConfig(name, address, port);
-		config.getTcpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate()));
-		config.getUdpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate()));
+		config.getTcpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate(), 500, 10000));
+		config.getTcpConfig().setConnectionTimeout(10000);
+		config.getUdpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate(), 500, 10000));
+		config.getUdpConfig().setConnectionTimeout(10000);
+
+		float sampleRate = config.getSoundApi().getMixer().getMicrophoneLine().getFormat().getSampleRate();
+		config.getSoundApi().getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, sampleRate));
+		config.setCompressionAlgorithm(1);
 
 		tree.setSeed(VoxyClientFactory.createClient(config));
 		return NodeHelper.result(true, "Client associated to player \"%s\" and server %s:%s created", name, address, port);
