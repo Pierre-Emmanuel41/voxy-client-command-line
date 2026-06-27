@@ -12,7 +12,10 @@ import fr.pederobien.commandtree.interfaces.IResult;
 import fr.pederobien.commandtree.interfaces.ITree;
 import fr.pederobien.communication.impl.layer.AesSafeLayerInitializer;
 import fr.pederobien.communication.impl.layer.SimpleCertificate;
+import fr.pederobien.sound.impl.Mixer;
+import fr.pederobien.sound.impl.SoundApi;
 import fr.pederobien.sound.impl.filters.SimpleBandPassFilter;
+import fr.pederobien.sound.interfaces.ISoundApi;
 import fr.pederobien.voxy.client.impl.VoxyClientFactory;
 import fr.pederobien.voxy.client.impl.config.VoxyClientConfig;
 import fr.pederobien.voxy.client.interfaces.IVoxyClient;
@@ -168,9 +171,15 @@ public class VoxyCommandTree {
 		config.getUdpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate(), 500, 10000));
 		config.getUdpConfig().setConnectionTimeout(10000);
 
-		float sampleRate = config.getSoundApi().getMixer().getMicrophoneLine().getFormat().getSampleRate();
-		config.getSoundApi().getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, sampleRate));
-		config.setCompressionAlgorithm(1);
+		config.setSoundApi(new SoundApi(new Mixer(48000)));
+		ISoundApi soundApi = config.getSoundApi();
+
+		// Sound API initialization failed
+		if (soundApi.getMicrophone() == null)
+			return NodeHelper.result(false, "The sound API could not be initialized");
+
+		soundApi.getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, soundApi.getMixer().getSampleRate()));
+		config.setCompressionAlgorithm(2);
 
 		tree.setSeed(VoxyClientFactory.createClient(config));
 		return NodeHelper.result(true, "Client associated to player \"%s\" and server %s:%s created", name, address, port);
