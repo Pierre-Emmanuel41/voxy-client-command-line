@@ -179,7 +179,7 @@ public class VoxyCommandTree {
 			return NodeHelper.result(false, "The sound API could not be initialized");
 
 		soundApi.getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, soundApi.getMixer().getSampleRate()));
-		config.setCompressionAlgorithm(2);
+		config.setCompressionAlgorithm(1);
 
 		tree.setSeed(VoxyClientFactory.createClient(config));
 		return NodeHelper.result(true, "Client associated to player \"%s\" and server %s:%s created", name, address, port);
@@ -303,7 +303,15 @@ public class VoxyCommandTree {
 		if (room.isPresent())
 			return NodeHelper.result(false, "The room \"%s\" is already registered on the server", name);
 
-		tree.getSeed().getRooms().add(name);
+		int port = 0;
+		if (1 < args.length) {
+			if (NodeHelper.isStrictInt(args[1]))
+				return NodeHelper.result(false, "The room's port number cannot be parsed, it shall be an integer");
+
+			port = NodeHelper.parseInt(args[1]);
+		}
+
+		tree.getSeed().getRooms().add(name, port);
 		return NodeHelper.result(true, "Adding room \"%s\" on the server", name);
 	}
 
