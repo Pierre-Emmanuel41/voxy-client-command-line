@@ -30,6 +30,8 @@ public class VoxyCommandTree {
 	private static final String JOIN = "join";
 	private static final String LEAVE = "leave";
 	private static final String SET = "set";
+	private static final String STREAM = "stream";
+	private static final String VOLUME = "volume";
 	private static final String MUTE = "mute";
 	private static final String DEAF = "deaf";
 	private static final String ADD = "add";
@@ -97,6 +99,18 @@ public class VoxyCommandTree {
 		builder.withAvailability(client -> client != null);
 		builder.withExecution((tree, args) -> setDeaf(tree, args));
 		set.add(builder.build());
+
+		// Set Stream ---------------------------------------------------------
+		builder = tree.getNodeBuilder(STREAM, "To modify the properties of an audio stream");
+		builder.withAvailability(client -> client != null && client.getSoundApi().getMixer().isInitialized());
+		INode<IVoxyClient> stream = builder.build();
+		set.add(stream);
+
+		// Set Stream Volume --------------------------------------------------
+		builder = tree.getNodeBuilder(VOLUME, "To increase or decrease the sound volume of an audio stream");
+		builder.withAvailability(client -> client != null);
+		builder.withExecution((tree, args) -> setVolume(tree, args));
+		stream.add(builder.build());
 
 		// Add ----------------------------------------------------------------
 		builder = tree.getNodeBuilder(ADD, "To send an Add request to the server");
@@ -179,7 +193,7 @@ public class VoxyCommandTree {
 			return NodeHelper.result(false, "The sound API could not be initialized");
 
 		soundApi.getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, soundApi.getMixer().getSampleRate()));
-		config.setCompressionAlgorithm(1);
+		config.setCompressionAlgorithm(2);
 
 		tree.setSeed(VoxyClientFactory.createClient(config));
 		return NodeHelper.result(true, "Client associated to player \"%s\" and server %s:%s created", name, address, port);
@@ -292,6 +306,22 @@ public class VoxyCommandTree {
 		boolean isDeaf = NodeHelper.parseBool(args[0]);
 		tree.getSeed().getPlayer().setDeaf(isDeaf);
 		return NodeHelper.result(true, "Sending deaf update to the server");
+	}
+
+	private IResult setVolume(ITree<IVoxyClient> tree, String[] args) {
+		if (args.length < 2)
+			return NodeHelper.result(false, "The player's name or the volume is missing");
+
+		String name = args[0];
+		if (!tree.getSeed().getSoundApi().getMixer().exist(name))
+			return NodeHelper.result(false, "There is no stream registered for \"%s\"", name);
+
+		String volume = args[1];
+		if (!NodeHelper.isStrictInt(volume))
+			return NodeHelper.result(false, "The volume offset cannot be parsed, it shall be an integer in range [0, 5]");
+
+		tree.getSeed().getSoundApi().getMixer().setOffset(name, NodeHelper.parseInt(volume));
+		return NodeHelper.result(true, "An offset of %s is applied on the volume of %s", volume, name);
 	}
 
 	private IResult addRoom(ITree<IVoxyClient> tree, String[] args) {
