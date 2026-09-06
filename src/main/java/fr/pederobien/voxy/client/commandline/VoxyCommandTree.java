@@ -12,10 +12,7 @@ import fr.pederobien.commandtree.interfaces.IResult;
 import fr.pederobien.commandtree.interfaces.ITree;
 import fr.pederobien.communication.impl.layer.AesSafeLayerInitializer;
 import fr.pederobien.communication.impl.layer.SimpleCertificate;
-import fr.pederobien.sound.impl.Mixer;
-import fr.pederobien.sound.impl.SoundApi;
 import fr.pederobien.sound.impl.filters.SimpleBandPassFilter;
-import fr.pederobien.sound.interfaces.ISoundApi;
 import fr.pederobien.voxy.client.impl.VoxyClientFactory;
 import fr.pederobien.voxy.client.impl.config.VoxyClientConfig;
 import fr.pederobien.voxy.client.interfaces.IVoxyClient;
@@ -31,7 +28,7 @@ public class VoxyCommandTree {
 	private static final String LEAVE = "leave";
 	private static final String SET = "set";
 	private static final String STREAM = "stream";
-	private static final String VOLUME = "volume";
+	private static final String VOLUME_FACTOR = "volume-factor";
 	private static final String MUTE = "mute";
 	private static final String DEAF = "deaf";
 	private static final String ADD = "add";
@@ -106,10 +103,10 @@ public class VoxyCommandTree {
 		INode<IVoxyClient> stream = builder.build();
 		set.add(stream);
 
-		// Set Stream Volume --------------------------------------------------
-		builder = tree.getNodeBuilder(VOLUME, "To increase or decrease the sound volume of an audio stream");
+		// Set Stream Volume-Factor -------------------------------------------
+		builder = tree.getNodeBuilder(VOLUME_FACTOR, "To increase or decrease the sound volume of an audio stream");
 		builder.withAvailability(client -> client != null);
-		builder.withExecution((tree, args) -> setVolume(tree, args));
+		builder.withExecution((tree, args) -> setVolumeFactor(tree, args));
 		stream.add(builder.build());
 
 		// Add ----------------------------------------------------------------
@@ -184,15 +181,7 @@ public class VoxyCommandTree {
 		config.getTcpConfig().setConnectionTimeout(10000);
 		config.getUdpConfig().setLayerInitializer(() -> new AesSafeLayerInitializer(new SimpleCertificate(), 500, 10000));
 		config.getUdpConfig().setConnectionTimeout(10000);
-
-		config.setSoundApi(new SoundApi(new Mixer(48000)));
-		ISoundApi soundApi = config.getSoundApi();
-
-		// Sound API initialization failed
-		if (soundApi.getMicrophone() == null)
-			return NodeHelper.result(false, "The sound API could not be initialized");
-
-		soundApi.getMicrophone().setFilter(new SimpleBandPassFilter(20, 3400, soundApi.getMixer().getSampleRate()));
+		config.setMicrophoneFilter(new SimpleBandPassFilter(20, 3400, config.getSoundApi().getMixer().getSampleRate()));
 		config.setCompressionAlgorithm(2);
 
 		tree.setSeed(VoxyClientFactory.createClient(config));
@@ -308,20 +297,23 @@ public class VoxyCommandTree {
 		return NodeHelper.result(true, "Sending deaf update to the server");
 	}
 
-	private IResult setVolume(ITree<IVoxyClient> tree, String[] args) {
+	private IResult setVolumeFactor(ITree<IVoxyClient> tree, String[] args) {
 		if (args.length < 2)
-			return NodeHelper.result(false, "The player's name or the volume is missing");
+			return NodeHelper.result(false, "The player's name or the volume factor is missing");
 
 		String name = args[0];
 		if (!tree.getSeed().getSoundApi().getMixer().exist(name))
 			return NodeHelper.result(false, "There is no stream registered for \"%s\"", name);
 
-		String volume = args[1];
-		if (!NodeHelper.isStrictInt(volume))
-			return NodeHelper.result(false, "The volume offset cannot be parsed, it shall be an integer in range [0, 5]");
+		if (!NodeHelper.isStrictDouble(args[1]))
+			return NodeHelper.result(false, "The volume factor cannot be parsed, it shall be a double in range [0, 2]");
 
-		tree.getSeed().getSoundApi().getMixer().setOffset(name, NodeHelper.parseInt(volume));
-		return NodeHelper.result(true, "An offset of %s is applied on the volume of %s", volume, name);
+		float volume = (float) NodeHelper.parseDouble(args[1]);
+		if (volume < 0 || 2 < volume)
+			return NodeHelper.result(false, "The volume factor shall be in range [0,2]");
+
+		tree.getSeed().getSoundApi().getMixer().setVolumeFactor(name, volume);
+		return NodeHelper.result(true, "An factor of %s is applied on the volume of %s", volume, name);
 	}
 
 	private IResult addRoom(ITree<IVoxyClient> tree, String[] args) {
